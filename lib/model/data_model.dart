@@ -1,39 +1,71 @@
-import 'option_model.dart';
+import 'dart:convert';
 
 class Folder {
-  String? title;
-  String? id;
-  String? icon;
-  List<Folder>? folder;
-  List<Option>? option;
+  String title;
+  List<Folder> subFolders;
+  List<Option> options;
+  String id;
+  String icon;
 
-  Folder({this.title, this.id, this.icon, this.folder, this.option});
-
-  factory Folder.fromJson(Map<String, dynamic> json) {
-    return Folder(
-      title: json['TITLE'],
-      id: json['_id'],
-      icon: json['_icon'],
-      folder: _parseFolderList(json['FOLDER']),
-      option: _parseOptionList(json['OPTION']),
-    );
-  }
-
-  static List<Folder>? _parseFolderList(dynamic folderList) {
-    if (folderList is List) {
-      return folderList.map((item) => Folder.fromJson(item)).toList();
-    } else if (folderList is Map<String, dynamic>) {
-     
-      return [Folder.fromJson(folderList)];
-    }
-    return null;
-  }
-
-  static List<Option>? _parseOptionList(dynamic optionList) {
-    if (optionList is List) {
-      return optionList.map((item) => Option.fromJson(item)).toList();
-    }
-    return null;
-  }
+  Folder({
+    required this.title,
+    required this.subFolders,
+    required this.options,
+    required this.id,
+    required this.icon,
+  });
 }
 
+class Option {
+  String title;
+  String id;
+  String icon;
+
+  Option({
+    required this.title,
+    required this.id,
+    required this.icon,
+  });
+}
+
+Folder parseFolder(String jsonData) {
+  final Map<String, dynamic> data = json.decode(jsonData);
+  return _parseFolder(data['APPLICATION']['FOLDER']);
+}
+
+Folder _parseFolder(dynamic data) {
+  if (data is Map<String, dynamic>) {
+    final List<Folder> subFolders = [];
+    final List<Option> options = [];
+
+    if (data['FOLDER'] != null) {
+      if (data['FOLDER'] is List) {
+        subFolders.addAll((data['FOLDER'] as List).map((folder) {
+          return _parseFolder(folder);
+        }).cast<Folder>());
+      } else if (data['FOLDER'] is Map) {
+        subFolders.add(_parseFolder(data['FOLDER']));
+      }
+    }
+
+    if (data['OPTION'] != null) {
+      options.addAll((data['OPTION'] as List).map((option) {
+        return Option(
+          title: option['TITLE'],
+          id: option['_id'],
+          icon: option['_icon'],
+        );
+      }).cast<Option>());
+    }
+
+    return Folder(
+      title: data['TITLE'],
+      subFolders: subFolders,
+      options: options,
+      id: data['_id'],
+      icon: data['_icon'],
+    );
+  } else {
+    throw ArgumentError('Invalid data type for folder');
+  }
+}

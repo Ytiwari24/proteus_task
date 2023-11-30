@@ -1,5 +1,5 @@
- const jsonData = '''
-    {
+const String jsonData='''
+{
       "APPLICATION": {
         "FOLDER": {
           "TITLE": "Sales",
